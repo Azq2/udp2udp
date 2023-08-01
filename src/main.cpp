@@ -7,6 +7,17 @@
 #include <signal.h>
 #include <nlohmann/json.hpp>
 
+/*
+Config format:
+
+[{
+	"src": "LISTEN_IP:LISTEN_PORT",
+	"dst": "DST_IP:DST_PORT,DST_IP2:DST_PORT2,...",
+	"xor": {"key": 170, "size": 40}
+}]
+
+*/
+
 using json = nlohmann::json;
 
 void signal_callback_handler(int signum) {
@@ -29,6 +40,12 @@ int main(int argc, char *argv[]) {
 		for (auto &config: configs) {
 			std::cerr << "src: " << config["src"] << ", dst: " << config["dst"] << "\n";
 			UdpProxy *proxy = new UdpProxy(config["src"].get<std::string>(), config["dst"].get<std::string>());
+			
+			if (config.contains("xor")) {
+				int max_length = config["xor"].contains("size") ? config["xor"]["size"].get<int>() : 0;
+				proxy->setXorEncryption(config["xor"]["key"].get<int>(), max_length);
+			}
+			
 			proxy->run(loop);
 		}
 		

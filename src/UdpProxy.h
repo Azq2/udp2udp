@@ -49,6 +49,8 @@ class UdpProxy {
 		uv_udp_t m_server = {};
 		bool m_debug = false;
 		uv_timer_t m_cleaner_timer = {};
+		uint8_t m_xor_key = 0;
+		size_t m_xor_size = 0;
 		
 		MemoryPool<TransferBuffer> *m_buffer_pool = nullptr;
 		MemoryPool<uv_udp_send_t> *m_udp_pool = nullptr;
@@ -61,15 +63,23 @@ class UdpProxy {
 		void udpSendCb(uv_udp_send_t *req, int status);
 		void cleanupOldConnections();
 		
-		inline static void encryptBuffer(uv_buf_t *buff) {
-			size_t len = buff->len > 40 ? 40 : buff->len;
-			for (size_t i = 0; i < len; i++)
-				buff->base[i] ^= 0xAA;
+		inline void encryptBuffer(uv_buf_t *buff) {
+			if (m_xor_size) {
+				size_t len = buff->len > m_xor_size ? m_xor_size : buff->len;
+				for (size_t i = 0; i < len; i++)
+					buff->base[i] ^= m_xor_key;
+			}
 		}
 		
 		Client *getClient(const struct sockaddr *addr);
 	
 	public:
 		UdpProxy(const std::string &src, const std::string &dst_list);
+		
+		inline void setXorEncryption(uint8_t key, size_t max_len) {
+			m_xor_key = key;
+			m_xor_size = max_len;
+		}
+		
 		void run(uv_loop_t *loop);
 };
