@@ -10,6 +10,7 @@
 
 class UdpProxy {
 	protected:
+		static constexpr uint32_t TIMEOUT = 60000;
 		static constexpr uint32_t MAX_UDP_SIZE = 64 * 1024;
 		static constexpr uint32_t MAX_UDP_MESSAGES = 1;
 		
@@ -42,23 +43,26 @@ class UdpProxy {
 		TransferBuffer *m_buffer = nullptr;
 		
 		struct sockaddr_in m_src = {};
-		struct sockaddr_in m_dst = {};
+		std::vector<struct sockaddr_in> m_dst = {};
+		size_t m_dst_cursor = 0;
 		uv_loop_t *m_loop = nullptr;
 		uv_udp_t m_server = {};
 		bool m_debug = false;
+		uv_timer_t m_cleaner_timer = {};
 		
 		MemoryPool<TransferBuffer> *m_buffer_pool = nullptr;
 		MemoryPool<uv_udp_send_t> *m_udp_pool = nullptr;
 		
-		std::unordered_map<uint64_t, Client> m_clients;
+		std::unordered_map<uint64_t, Client *> m_clients;
 		
 		void allocRecvBuffer(size_t suggested_size, uv_buf_t *buf);
 		void clientRecvCb(uv_udp_t *handle, ssize_t nread, const uv_buf_t *buf, const struct sockaddr *addr, unsigned flags);
 		void serverRecvCb(uv_udp_t *handle, ssize_t nread, const uv_buf_t *buf, const struct sockaddr *addr, unsigned flags);
 		void udpSendCb(uv_udp_send_t *req, int status);
+		void cleanupOldConnections();
 		
 		inline static void encryptBuffer(uv_buf_t *buff) {
-			size_t len = buff->len > 8 ? 8 : buff->len;
+			size_t len = buff->len > 40 ? 40 : buff->len;
 			for (size_t i = 0; i < len; i++)
 				buff->base[i] ^= 0xAA;
 		}
@@ -66,6 +70,6 @@ class UdpProxy {
 		Client *getClient(const struct sockaddr *addr);
 	
 	public:
-		UdpProxy(const std::string &src, const std::string &dst);
+		UdpProxy(const std::string &src, const std::string &dst_list);
 		void run(uv_loop_t *loop);
 };

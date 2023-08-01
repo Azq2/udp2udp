@@ -1,0 +1,18 @@
+Source: udp2udp
+Section: kernel
+Priority: optional
+Maintainer: Kirill Zhumarin <kirill.zhumarin@gmail.com>
+Rules-Requires-Root: no
+Build-Depends:
+ debhelper-compat (= 12),
+ cmake,
+ nlohmann-json3-dev,
+ libuv1-dev,
+ quilt,
+Standards-Version: 4.5.0
+
+Package: udp2udp
+Architecture: any
+Depends:
+ libuv1,
+Description: Simple udp obfuscator for wireguard.

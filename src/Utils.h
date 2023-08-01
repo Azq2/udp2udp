@@ -17,3 +17,6 @@ inline std::string ip2str(const struct sockaddr_in *src) {
 inline std::string ip2str(const struct sockaddr_in6 *src) {
 	return ip2str(reinterpret_cast<const struct sockaddr *>(src));
 }
+
+std::string readFile(const std::string &path);
+std::string strprintf(const char *format, ...);
